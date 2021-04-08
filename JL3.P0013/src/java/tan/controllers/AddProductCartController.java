@@ -1,0 +1,102 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package tan.controllers;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import tan.dao.ProductDAO;
+import tan.dtos.CartProduct;
+import tan.dtos.ProductDTO;
+import tan.dtos.UserDTO;
+
+/**
+ *
+ * @author tanta
+ */
+public class AddProductCartController extends HttpServlet {
+
+    private static final String SUCCESS = "ViewMainController";
+
+    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        response.setContentType("text/html;charset=UTF-8");
+        response.setCharacterEncoding("utf-8");
+        String url = "";
+        try {
+            HttpSession session = request.getSession();
+            CartProduct cartProduct = (CartProduct) session.getAttribute("cartProduct");
+            UserDTO userDto = (UserDTO) session.getAttribute("user");
+            if (userDto == null) {
+                url = "login.jsp";
+            } else {
+                if (cartProduct == null) {
+                    cartProduct = new CartProduct(userDto.getUserID());
+                }
+                String idProduct = (String) request.getParameter("idProduct");
+                ProductDAO productDAO = new ProductDAO();
+                String tmpAddQuantity = (String) request.getParameter("addQuantity");
+                if (tmpAddQuantity == null) {
+                    tmpAddQuantity = "1";
+                }
+                int addQuantity = Integer.parseInt(tmpAddQuantity);
+                ProductDTO productDTO = productDAO.getProductByID(idProduct);
+                productDTO.setQuantity(addQuantity);
+                cartProduct.addToCart(productDTO, addQuantity);
+                session.setAttribute("cartProduct", cartProduct);
+                url = SUCCESS;
+            }
+        } catch (Exception e) {
+            log("Error at AddProductCartController : " + e.getMessage());
+        } finally {
+            request.getRequestDispatcher(url).forward(request, response);
+        }
+    }
+
+    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
+    /**
+     * Handles the HTTP <code>GET</code> method.
+     *
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
+
+    /**
+     * Handles the HTTP <code>POST</code> method.
+     *
+     * @param request servlet request
+     * @param response servlet response
+     * @throws ServletException if a servlet-specific error occurs
+     * @throws IOException if an I/O error occurs
+     */
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processRequest(request, response);
+    }
+
+    /**
+     * Returns a short description of the servlet.
+     *
+     * @return a String containing servlet description
+     */
+    @Override
+    public String getServletInfo() {
+        return "Short description";
+    }// </editor-fold>
+
+}
